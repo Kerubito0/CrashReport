@@ -19,10 +19,26 @@ internal class CrashReport {
                 print("\(error)")
                 return
             }
-            reports.forEach { report in
-                print("\(report)")
+            
+            let jsons: [Any] = reports.compactMap { report in
+                guard let data = "\(report)".data(using: .utf8),
+                      let json = try? JSONSerialization.jsonObject(with: data) else { return nil }
+                return json
             }
-
+            guard let filter = KSCrashReportFilterAppleFmt.filter(with: KSAppleReportStyleSymbolicatedSideBySide) else {
+                return
+            }
+            filter.filterReports(jsons, onCompletion: { reports, completed, error in
+                if let error = error {
+                    print("\(error)")
+                    return
+                }
+                if completed, let reports = reports {
+                    reports.forEach { report in
+                        print("\(report)")
+                    }
+                }
+            })
         }
     }
 }
